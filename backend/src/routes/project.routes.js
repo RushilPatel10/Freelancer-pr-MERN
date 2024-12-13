@@ -115,4 +115,125 @@ router.get('/export', auth, async (req, res) => {
   }
 });
 
+// Add payment to project
+router.post('/:id/payments', auth, async (req, res) => {
+  try {
+    const { amount, date, description, status } = req.body;
+    
+    // Enhanced validation
+    if (!amount || isNaN(parseFloat(amount))) {
+      return res.status(400).json({ message: 'Valid amount is required' });
+    }
+    if (!date) {
+      return res.status(400).json({ message: 'Date is required' });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ message: 'Description is required' });
+    }
+    if (status && !['pending', 'paid'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const project = await Project.findOne({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const newPayment = {
+      amount: parseFloat(amount),
+      date: new Date(date),
+      description: description.trim(),
+      status: status || 'pending'
+    };
+
+    project.payments.push(newPayment);
+    await project.save();
+
+    res.status(201).json(project.payments[project.payments.length - 1]);
+  } catch (error) {
+    console.error('Payment creation error:', error);
+    res.status(400).json({ 
+      message: 'Error adding payment',
+      error: error.message
+    });
+  }
+});
+
+// Delete payment from project
+router.delete('/:projectId/payments/:paymentId', auth, async (req, res) => {
+  try {
+    console.log('Attempting to delete payment:', {
+      projectId: req.params.projectId,
+      paymentId: req.params.paymentId
+    });
+
+    const project = await Project.findOne({
+      _id: req.params.projectId,
+      userId: req.user.userId
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Find the payment index
+    const paymentIndex = project.payments.findIndex(
+      payment => payment._id.toString() === req.params.paymentId
+    );
+
+    if (paymentIndex === -1) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    // Remove the payment using splice
+    project.payments.splice(paymentIndex, 1);
+
+    // Save with validation disabled for this operation
+    await project.save({ validateBeforeSave: false });
+
+    console.log('Payment deleted successfully');
+    res.json({ message: 'Payment deleted successfully' });
+  } catch (error) {
+    console.error('Payment deletion error:', error);
+    res.status(500).json({ 
+      message: 'Error deleting payment',
+      error: error.message
+    });
+  }
+});
+
+// Update payment status
+router.put('/:projectId/payments/:paymentId', auth, async (req, res) => {
+  try {
+    const project = await Project.findOne({
+      _id: req.params.projectId,
+      userId: req.user.userId
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const payment = project.payments.id(req.params.paymentId);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    payment.status = req.body.status;
+    await project.save();
+
+    res.json(payment);
+  } catch (error) {
+    console.error('Payment status update error:', error);
+    res.status(400).json({ 
+      message: 'Error updating payment status',
+      error: error.message 
+    });
+  }
+});
+
 export default router; 

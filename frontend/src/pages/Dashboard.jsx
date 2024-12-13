@@ -22,10 +22,11 @@ export default function Dashboard() {
 
   const fetchProjects = async () => {
     try {
-      const response = await api.get('/projects');
+      const response = await api.get('/');
       setProjects(response.data);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      showToast('Error fetching projects', 'error');
     }
   };
 
@@ -42,7 +43,7 @@ export default function Dashboard() {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/projects', newProject);
+      await api.post('/', newProject);
       fetchProjects();
       setNewProject({ name: '', dueDate: '', status: 'active' });
       showToast('Project created successfully', 'success');
@@ -53,7 +54,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-6 max-w-7xl">
       {toast && (
         <Toast
           message={toast.message}
@@ -64,35 +65,35 @@ export default function Dashboard() {
       <EarningsOverview payments={allPayments} />
       
       {/* Project Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-xl font-bold mb-4">Add New Project</h2>
-        <form onSubmit={handleCreateProject} className="flex space-x-4">
+      <div className="bg-white p-8 rounded-2xl shadow-lg mb-8">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Add New Project</h2>
+        <form onSubmit={handleCreateProject} className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
             placeholder="Project Name"
             value={newProject.name}
             onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-            className="border p-2 rounded flex-1"
+            className="border-gray-300 rounded-lg flex-1 focus:ring-teal-500 focus:border-teal-500"
             required
           />
           <input
             type="date"
             value={newProject.dueDate}
             onChange={(e) => setNewProject({ ...newProject, dueDate: e.target.value })}
-            className="border p-2 rounded w-48"
+            className="border-gray-300 rounded-lg w-48 focus:ring-teal-500 focus:border-teal-500"
             required
           />
           <select
             value={newProject.status}
             onChange={(e) => setNewProject({ ...newProject, status: e.target.value })}
-            className="border p-2 rounded w-36"
+            className="border-gray-300 rounded-lg w-36 focus:ring-teal-500 focus:border-teal-500"
           >
             <option value="active">Active</option>
             <option value="completed">Completed</option>
           </select>
           <button
             type="submit"
-            className="bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700"
+            className="bg-gradient-to-r from-teal-600 to-teal-700 text-white px-8 py-2 rounded-lg hover:from-teal-700 hover:to-teal-800 transition duration-200 shadow-md"
           >
             Add Project
           </button>
@@ -100,7 +101,7 @@ export default function Dashboard() {
       </div>
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {projects.map(project => (
           <ProjectCard
             key={project._id}
